@@ -19,7 +19,9 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -27,31 +29,43 @@ import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-    View dialogView;
-    String tmp;
-    Integer speed;
+        View dialogView;
+        String tmp;
+        Integer speed;
 
+    //Button connect_btn;
+    //EditText ip_edit;
+
+    private static final String TAG = "MainActivity";
     private String html="";
     private Handler mHandler;
     private Socket socket;
 
     private BufferedReader reader;
     private BufferedWriter writer;
+    private DataOutputStream output;
+    private DataOutputStream front;
 
-    private String ip="172.30.1.37"; //ip번호
+    private String ip="172.30.1.31"; //ip번호
     private int port=9999;           //prot번호
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        connet();
 
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.RECORD_AUDIO}, 5);
@@ -77,16 +91,43 @@ public class MainActivity extends AppCompatActivity {
         speedView.setText(speed.toString());
 
         //전진 버튼 리스너 -> 이미지변경
-        go.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch(event.getAction())
+                go.setOnTouchListener(new View.OnTouchListener() {
+                    @Override
+                    public boolean onTouch(View v, MotionEvent event) {
+                        Log.d(TAG,"버튼 클릭");
+                        switch(event.getAction())
                 {
                     case MotionEvent.ACTION_DOWN:
-                        go.setBackgroundResource(R.drawable.up_pushed); break;
+                        Log.d(TAG,"다운");
+                        go.setBackgroundResource(R.drawable.up_pushed);
+                        try{
+                            Log.d(TAG,"트라이");
+
+                            front=new DataOutputStream(socket.getOutputStream());
+                            Log.d(TAG,"데이터들어감");
+                            front.writeBytes("W");
+                            Log.d(TAG,"W생성");
+                        }
+                        catch (IOException e){
+                            Log.d(TAG,"예외");
+                            e.printStackTrace();
+                            Log.d(TAG,"버퍼생성잘못됨");
+                        }
+                        break;
+
 
                     case MotionEvent.ACTION_UP:
-                        go.setBackgroundResource(R.drawable.up_button); break;
+                        Log.d(TAG,"업");
+                        go.setBackgroundResource(R.drawable.up_button);
+                        try{
+                            output=new DataOutputStream(socket.getOutputStream());
+                            output.writeBytes("W");
+                        }
+                        catch (IOException e){
+                            e.printStackTrace();
+                            Log.d(TAG,"버퍼생성잘못됨");
+                        }
+                        break;
                 }
 
                 return false;
@@ -299,6 +340,17 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+
+
+
+
+
+
+
+
+
+
+    //소켓 연결
     void connet(){
         mHandler = new Handler();
         Log.w("connect","연결 하는중");
@@ -307,20 +359,33 @@ public class MainActivity extends AppCompatActivity {
             public void run() {
                 try{
                     socket = new Socket(ip,port);
+                    output=new DataOutputStream(socket.getOutputStream());
                 }catch (IOException e1) {
                     Log.w("서버접속못함", "서버접속못함");
                     e1.printStackTrace();
+                }
+                try{
+                    output=new DataOutputStream(socket.getOutputStream());
+                    output.writeBytes("s");
+
+                }
+                catch (IOException e){
+                    e.printStackTrace();
+                    Log.w("버퍼","버퍼생성잘못됨");
                 }
             }
         };
         checkUpdate.start();
     }
-
     @Override
     protected void onStop()
     {
         super.onStop();
-
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         final TextView speedView = findViewById(R.id.speedView);
 
         SharedPreferences sp = getSharedPreferences("SPEED", MODE_PRIVATE);
@@ -329,14 +394,8 @@ public class MainActivity extends AppCompatActivity {
         editor.putInt("speed", Integer.parseInt(tmp));
 
         editor.commit();
-
-        super.onStop();
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
+
 
     //음성인식 처리부
     public void inputVoice(final TextView voice_text) {
