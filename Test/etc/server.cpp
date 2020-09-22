@@ -63,30 +63,59 @@ int main(int argc, char*argv[])
     cout << "Server : " << temp << " client connected.\n";
     while (1)
     {
- 	recv(client_fd,buffer,BUF_SIZE,0);
 	cout << "waiting" <<endl;
+	client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &len);
+  	inet_ntop(AF_INET, &client_addr.sin_addr.s_addr, temp, sizeof(temp));
+	recv(client_fd,buffer,BUF_SIZE,0);
+	while(1)
+	{
 	//cout << "recive : " <<  buffer << endl;
 	//cout << "ddd : " <<  buffer[0] << endl;
 	//cout<< "type : " << typeid(buffer).name() <<endl;
 	//cout << "buffer : " <<  buffer <<endl;
-	if(buffer[0]=='W'){
-		cout << "buffer : " <<  buffer <<endl;
-		
-		recv(client_fd,buffer,BUF_SIZE,0);
+		if(buffer[0]=='W'){
+			cout << "buffer : " <<  buffer <<endl;
+			
+			break;
+		}
+		if(buffer[0]=='X'){
+			cout << "buffer : " <<  buffer <<endl;
+			
+			break;
+		}
+		if(buffer[0]=='N'){
+			cout << "buffer : " <<  buffer <<endl;
+			break;
+		}
+		if(buffer[0]=='S'){
+			cout << "buffer : " <<  buffer <<endl;
+			break;
+		}
+		if(buffer[0]=='Q'){
+			cout << "buffer : " <<  buffer <<endl;
+			break;
+		}
+		if(buffer[0]=='E'){
+			cout << "buffer : " <<  buffer <<endl;
+			break;
+		}
+		if(buffer[0]=='Z'){
+			cout << "buffer : " <<  buffer <<endl;
+			break;
+		}
+		if(buffer[0]=='C'){
+			cout << "buffer : " <<  buffer <<endl;
+			break;
+		}
+		if(buffer[0]=='U'){
+			cout << "buffer : " <<  buffer <<endl;
+			break;
+		}
+		if(buffer[0]=='J'){
+			cout << "buffer : " <<  buffer <<endl;
+			break;
+		}
 	}
-	if(buffer[0]=='X'){
-		cout << "buffer : " <<  buffer <<endl;
-		buffer[0]='A';
-		recv(client_fd,buffer,BUF_SIZE,0);
-		continue;
-	}
-	if(buffer[0]=='N'){
-		cout << "buffer : " <<  buffer <<endl;
-		buffer[0]='A';
-		recv(client_fd,buffer,BUF_SIZE,0);
-		continue;
-	}
-
 
 	//buffer[0]='N';
 
