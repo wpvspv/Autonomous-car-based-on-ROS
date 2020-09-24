@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.Intent;//음성인식 관련 패키지
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.app.ActivityCompat;//오디오녹음 권한 허용창 생성에 필요
@@ -33,19 +34,19 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
-        View dialogView;
-        String tmp;
-        Integer speed;
-
-    //Button connect_btn;
-    //EditText ip_edit;
+    View dialogView;
+    String tmp;
+    Integer speed=80;
+    private char m;
 
     private static final String TAG = "MainActivity";
     private String html="";
@@ -57,15 +58,14 @@ public class MainActivity extends AppCompatActivity {
     private DataOutputStream output;
     private DataOutputStream front;
 
-    private String ip="172.30.1.31"; //ip번호
+    private String ip="172.30.1.35"; //ip번호
     private int port=9999;           //prot번호
+    private char massage;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        connet();
 
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.RECORD_AUDIO}, 5);
@@ -85,51 +85,136 @@ public class MainActivity extends AppCompatActivity {
         final Switch autoDriveMode = findViewById(R.id.autoDriveMode);
         final Switch voiceControl = findViewById(R.id.voiceControl);
 
+
         //SharedPreference에서 속도 값을 가져와서 속도계에 출력
-        SharedPreferences sp = getSharedPreferences("SPEED", MODE_PRIVATE);
-        speed = sp.getInt("speed", 120);
-        speedView.setText(speed.toString());
+        //SharedPreferences sp = getSharedPreferences("SPEED", MODE_PRIVATE);
+        //speed = sp.getInt("speed", 80);
+        //speedView.setText(speed.toString());
 
         //전진 버튼 리스너 -> 이미지변경
-                go.setOnTouchListener(new View.OnTouchListener() {
+ /*       go.setOnTouchListener(new RepeatListener(400, 100,new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //go.setBackgroundResource(R.drawable.up_pushed);
+                MyClientTask myclientTask_down_W = new MyClientTask(ip,port, 'W');
+                myclientTask_down_W.execute();
+
+                left.setOnTouchListener(new View.OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
-                        Log.d(TAG,"버튼 클릭");
                         switch(event.getAction())
+                        {
+                            case MotionEvent.ACTION_DOWN:
+                                left.setBackgroundResource(R.drawable.left_pushed);
+                                MyClientTask myclientTask_down_Q = new MyClientTask(ip,port, 'Q');
+                                myclientTask_down_Q.execute();
+                                break;
+
+                            case MotionEvent.ACTION_UP:
+                                left.setBackgroundResource(R.drawable.left_button);
+                                MyClientTask myclientTask_up_W = new MyClientTask(ip,port, 'W');
+                                myclientTask_up_W.execute();
+                                break;
+                        }
+
+                        return false;
+                    }
+                });
+
+
+
+
+
+
+            }
+        }));
+
+  */
+        go.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                Log.d(TAG,"버튼 클릭");
+
+                switch(event.getAction())
                 {
                     case MotionEvent.ACTION_DOWN:
                         Log.d(TAG,"다운");
-                        go.setBackgroundResource(R.drawable.up_pushed);
-                        try{
-                            Log.d(TAG,"트라이");
 
-                            front=new DataOutputStream(socket.getOutputStream());
-                            Log.d(TAG,"데이터들어감");
-                            front.writeBytes("W");
-                            Log.d(TAG,"W생성");
-                        }
-                        catch (IOException e){
-                            Log.d(TAG,"예외");
-                            e.printStackTrace();
-                            Log.d(TAG,"버퍼생성잘못됨");
+                        go.setBackgroundResource(R.drawable.up_pushed);
+
+                        MyClientTask myclientTask_down_W = new MyClientTask(ip,port, 'W');
+                        myclientTask_down_W.execute();
+                        m='W';
+                        System.out.println(m);
+                        //왼쪽 앞으로
+                        if(m=='W') {
+                            left.setOnTouchListener(new View.OnTouchListener() {
+                                @Override
+                                public boolean onTouch(View v, MotionEvent event) {
+                                    Log.d(TAG, "버튼 클릭");
+                                    switch (event.getAction()) {
+                                        case MotionEvent.ACTION_DOWN:
+                                            Log.d(TAG, "다운");
+                                            left.setBackgroundResource(R.drawable.left_pushed);
+                                            MyClientTask myclientTask_down_Q = new MyClientTask(ip, port, 'Q');
+                                            myclientTask_down_Q.execute();
+                                            m='Q';
+                                            System.out.println(m);
+                                            break;
+
+                                        case MotionEvent.ACTION_UP:
+                                            Log.d(TAG, "업");
+                                            left.setBackgroundResource(R.drawable.left_button);
+                                            MyClientTask myclientTask_up_Q = new MyClientTask(ip, port, 'W');
+                                            myclientTask_up_Q.execute();
+                                            m='S';
+                                            System.out.println(m);
+                                            break;
+                                    }
+                                    return false;
+                                }
+                            });
+
+                            //오른쪽 앞으로
+                            right.setOnTouchListener(new View.OnTouchListener() {
+                                @Override
+                                public boolean onTouch(View v, MotionEvent event) {
+                                    Log.d(TAG, "버튼 클릭");
+                                    switch (event.getAction()) {
+                                        case MotionEvent.ACTION_DOWN:
+                                            Log.d(TAG, "다운");
+                                            right.setBackgroundResource(R.drawable.right_pushed);
+                                            MyClientTask myclientTask_down_E = new MyClientTask(ip, port, 'E');
+                                            myclientTask_down_E.execute();
+                                            m='E';
+                                            System.out.println(m);
+                                            break;
+
+                                        case MotionEvent.ACTION_UP:
+                                            Log.d(TAG, "업");
+                                            right.setBackgroundResource(R.drawable.right_button);
+                                            MyClientTask myclientTask_up_W = new MyClientTask(ip, port, 'W');
+                                            myclientTask_up_W.execute();
+                                            m='S';
+                                            System.out.println(m);
+                                            break;
+                                    }
+                                    return false;
+                                }
+                            });
+
                         }
                         break;
-
-
+                    //전진버튼 땠을 때
                     case MotionEvent.ACTION_UP:
                         Log.d(TAG,"업");
                         go.setBackgroundResource(R.drawable.up_button);
-                        try{
-                            output=new DataOutputStream(socket.getOutputStream());
-                            output.writeBytes("W");
-                        }
-                        catch (IOException e){
-                            e.printStackTrace();
-                            Log.d(TAG,"버퍼생성잘못됨");
-                        }
+                        MyClientTask myclientTask_up_S = new MyClientTask(ip,port, 'S');
+                        myclientTask_up_S.execute();
+                        m='S';
+                        System.out.println(m);
                         break;
                 }
-
                 return false;
             }
         });
@@ -141,17 +226,95 @@ public class MainActivity extends AppCompatActivity {
                 switch(event.getAction())
                 {
                     case MotionEvent.ACTION_DOWN:
-                        back.setBackgroundResource(R.drawable.down_pushed); break;
+                        back.setBackgroundResource(R.drawable.down_pushed);
+                        MyClientTask myclientTask_down_X = new MyClientTask(ip,port, 'X');
+                        myclientTask_down_X.execute();
+                        m='X';
+                        System.out.println(m);
+                        //왼쪽 뒤로
+                        if(m=='X') {
+                            left.setOnTouchListener(new View.OnTouchListener() {
+                                @Override
+                                public boolean onTouch(View v, MotionEvent event) {
+                                    Log.d(TAG, "버튼 클릭");
+                                    switch (event.getAction()) {
+                                        case MotionEvent.ACTION_DOWN:
+                                            Log.d(TAG, "다운");
+                                            left.setBackgroundResource(R.drawable.left_pushed);
+                                            MyClientTask myclientTask_down_Z = new MyClientTask(ip, port, 'Z');
+                                            myclientTask_down_Z.execute();
+                                            m='Z';
+                                            System.out.println(m);
+                                            break;
+
+                                        case MotionEvent.ACTION_UP:
+                                            Log.d(TAG, "업");
+                                            left.setBackgroundResource(R.drawable.left_button);
+                                            MyClientTask myclientTask_up_X = new MyClientTask(ip, port, 'X');
+                                            myclientTask_up_X.execute();
+                                            m='S';
+                                            System.out.println(m);
+                                            break;
+                                    }
+                                    return false;
+                                }
+                            });
+
+                            //오른쪽 앞으로
+                            right.setOnTouchListener(new View.OnTouchListener() {
+                                @Override
+                                public boolean onTouch(View v, MotionEvent event) {
+                                    Log.d(TAG, "버튼 클릭");
+                                    switch (event.getAction()) {
+                                        case MotionEvent.ACTION_DOWN:
+                                            Log.d(TAG, "다운");
+                                            right.setBackgroundResource(R.drawable.right_pushed);
+                                            MyClientTask myclientTask_down_C = new MyClientTask(ip, port, 'C');
+                                            myclientTask_down_C.execute();
+                                            m='C';
+                                            System.out.println(m);
+                                            break;
+
+                                        case MotionEvent.ACTION_UP:
+                                            Log.d(TAG, "업");
+                                            right.setBackgroundResource(R.drawable.right_button);
+                                            MyClientTask myclientTask_up_X = new MyClientTask(ip, port, 'X');
+                                            myclientTask_up_X.execute();
+                                            m='S';
+                                            System.out.println(m);
+                                            break;
+                                    }
+                                    return false;
+                                }
+                            });
+
+                        }
+                        break;
 
                     case MotionEvent.ACTION_UP:
-                        back.setBackgroundResource(R.drawable.down_button); break;
+                        back.setBackgroundResource(R.drawable.down_button);
+                        MyClientTask myclientTask_up_S = new MyClientTask(ip,port, 'S');
+                        myclientTask_up_S.execute();
+                        m='S';
+                        System.out.println(m);
+                        break;
                 }
 
                 return false;
             }
         });
 
-        //좌회전 버튼 리스너 -> 이미지 변경
+/*        back.setOnTouchListener(new RepeatListener(400, 100,new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //go.setBackgroundResource(R.drawable.up_pushed);
+                MyClientTask myclientTask_down_X = new MyClientTask(ip,port, 'X');
+                myclientTask_down_X.execute();
+            }
+        }));
+
+ */
+/*     //좌회전 버튼 리스너 -> 이미지 변경
         left.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -185,6 +348,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+
+    */
+
         //속도 증가 버튼 리스너 -> 이미지 변경
         speedUp.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -192,13 +358,16 @@ public class MainActivity extends AppCompatActivity {
                 switch(event.getAction())
                 {
                     case MotionEvent.ACTION_DOWN:
-                        speedUp.setBackgroundResource(R.drawable.speed_up_pushed); break;
+                        speedUp.setBackgroundResource(R.drawable.speed_up_pushed);
+                        break;
 
                     case MotionEvent.ACTION_UP:
                         speedUp.setBackgroundResource(R.drawable.speed_up_button);
+                        MyClientTask myclientTask_down_U = new MyClientTask(ip,port, 'U');
+                        myclientTask_down_U.execute();
                         tmp = speedView.getText().toString();
                         speed = Integer.parseInt(tmp);
-                        if(speed >= 255) speed = 255;
+                        if(speed >= 170) speed = 170;
                         else             speed += 5;
                         speedView.setText(speed.toString());
                         break;
@@ -219,9 +388,11 @@ public class MainActivity extends AppCompatActivity {
 
                     case MotionEvent.ACTION_UP:
                         speedDown.setBackgroundResource(R.drawable.speed_down_button);
+                        MyClientTask myclientTask_down_J = new MyClientTask(ip,port, 'J');
+                        myclientTask_down_J.execute();
                         tmp = speedView.getText().toString();
                         speed = Integer.parseInt(tmp);
-                        if(speed <= 0) speed = 0;
+                        if(speed <= 80) speed = 80;
                         else           speed -= 5;
                         speedView.setText(speed.toString());
                         break;
@@ -348,8 +519,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-
-
+/*
     //소켓 연결
     void connet(){
         mHandler = new Handler();
@@ -377,6 +547,8 @@ public class MainActivity extends AppCompatActivity {
         };
         checkUpdate.start();
     }
+
+
     @Override
     protected void onStop()
     {
@@ -395,8 +567,55 @@ public class MainActivity extends AppCompatActivity {
 
         editor.commit();
     }
+*/
 
+    public class MyClientTask extends AsyncTask<Void, Void, Void>{
+        String taskIp;
+        int taskPort;
+        char taskMessage;
+        String response="";
 
+        MyClientTask(String ip, int port, char message){
+            taskIp=ip;
+            taskPort=port;
+            taskMessage=message;
+        }
+        @Override
+        protected Void doInBackground(Void... arg0){
+            Socket socket = null;
+            try{
+                socket=new Socket(taskIp,taskPort);
+                OutputStream out = socket.getOutputStream();
+                out.write(taskMessage);
+            }
+            catch (UnknownHostException e){
+                e.printStackTrace();
+                response="UnknownHostException" + e.toString();
+            }
+            catch (IOException e){
+                e.printStackTrace();
+                response="IOException"+e.toString();
+            }
+            finally {
+                if(socket!=null){
+                    try{
+                        socket.close();
+                    }
+                    catch (IOException e){
+                        e.printStackTrace();
+                    }
+                }
+            }
+            return null;
+        }
+    /*
+    @Override
+    protected void onPostExecute(Void result){
+
+        super.onPostExecute();
+    }
+    */
+    }
     //음성인식 처리부
     public void inputVoice(final TextView voice_text) {
         try {
@@ -529,4 +748,63 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
         }
     }
+
+
+    public class RepeatListener implements View.OnTouchListener {
+        private Handler handler = new Handler();
+
+        private int initialInterval;
+        private final int normalInterval;
+        private final View.OnClickListener clickListener;
+        private View touchedView;
+
+        private Runnable handlerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if(touchedView.isEnabled()){
+                    handler.postDelayed(this, normalInterval);
+                    clickListener.onClick(touchedView);
+                }
+                else{
+                    handler.removeCallbacks(handlerRunnable);
+                    touchedView.setPressed(false);
+                    touchedView=null;
+                }
+            }
+        };
+
+        public RepeatListener(int initialInterval, int normalInterval, View.OnClickListener clickListener){
+            if(clickListener==null)
+                throw new IllegalArgumentException("null runnable");
+            if(initialInterval<0 || normalInterval<0)
+                throw new IllegalArgumentException("negative interval");
+
+            this.initialInterval=initialInterval;
+            this.normalInterval=normalInterval;
+            this.clickListener=clickListener;
+        }
+
+        public boolean onTouch(View view, MotionEvent motionEvent){
+            switch (motionEvent.getAction()){
+                case MotionEvent.ACTION_DOWN:
+                    handler.removeCallbacks(handlerRunnable);
+                    handler.postDelayed(handlerRunnable, initialInterval);
+                    touchedView = view;
+                    touchedView.setPressed(true);
+                    clickListener.onClick(view);
+
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    MyClientTask myclientTask_up_W = new MyClientTask(ip,port, 'S');
+                    myclientTask_up_W.execute();
+                case MotionEvent.ACTION_CANCEL:
+                    handler.removeCallbacks(handlerRunnable);
+                    touchedView.setPressed(false);
+                    touchedView = null;
+                    return true;
+            }
+            return false;
+        }
+    }
 }
+
