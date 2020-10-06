@@ -58,9 +58,16 @@ public class MainActivity extends AppCompatActivity {
     private DataOutputStream output;
     private DataOutputStream front;
 
-    private String ip="172.30.1.35"; //ip번호
+    private String ip="172.30.1.32"; //우리집 ip번호
+    //private String ip="192.168.219.101"; //너희집 ip번호
     private int port=9999;           //prot번호
     private char massage;
+
+    Intent intent;
+    SpeechRecognizer stt;
+    int flag;
+    AlertDialog.Builder builder;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
 
         final Switch autoDriveMode = findViewById(R.id.autoDriveMode);
         final Switch voiceControl = findViewById(R.id.voiceControl);
-
 
         //SharedPreference에서 속도 값을 가져와서 속도계에 출력
         //SharedPreferences sp = getSharedPreferences("SPEED", MODE_PRIVATE);
@@ -260,7 +266,7 @@ public class MainActivity extends AppCompatActivity {
                                 }
                             });
 
-                            //오른쪽 앞으로
+                            //오른쪽 뒤로
                             right.setOnTouchListener(new View.OnTouchListener() {
                                 @Override
                                 public boolean onTouch(View v, MotionEvent event) {
@@ -423,11 +429,14 @@ public class MainActivity extends AppCompatActivity {
                     left.setBackgroundResource(R.drawable.left_locked);
                     right.setBackgroundResource(R.drawable.right_locked);
 
+
                     Toast.makeText(MainActivity.this, "음성인식을 시작합니다.", Toast.LENGTH_SHORT).show();
 
                     //음성인식 스위치 켜질 경우 -> 사용자가 한 말을 보여주는 커스텀다이얼로그 생성
                     dialogView = getLayoutInflater().inflate(R.layout.voice_dialog, null);//레이아웃을 담는 View객체 생성
-                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);//alertDialog.builder객체 생성 -> 다이얼로그의 각종 setting가능
+                    builder = new AlertDialog.Builder(MainActivity.this);//alertDialog.builder객체 생성 -> 다이얼로그의 각종 setting가능
+                    //intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                    //Toast.makeText(MainActivity.this, builder.getClass().getName(), Toast.LENGTH_SHORT).show();
                     builder.setView(dialogView);
                     builder.setTitle("Voice Controlling");//다이얼로그 타이틀
                     builder.setCancelable(false);//다이얼로그 외부 눌러도 종료되지 않게 함
@@ -441,6 +450,7 @@ public class MainActivity extends AppCompatActivity {
                     AlertDialog alertDialog = builder.create();//AlertDialog객체 생성
                     alertDialog.show();
 
+                    flag=1;
                     inputVoice(voice_text);
                 }
 
@@ -460,10 +470,14 @@ public class MainActivity extends AppCompatActivity {
                     left.setBackgroundResource(R.drawable.left_button);
                     right.setBackgroundResource(R.drawable.right_button);
 
-                    Toast.makeText(MainActivity.this, "음성인식을 종료합니다.", Toast.LENGTH_SHORT).show();
+                    flag=0;
+
+                    inputVoice(voice_text);
+
                 }
             }
         });
+
 
         //자율주행 스위치 리스너
         autoDriveMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -511,64 +525,197 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    //음성인식 처리부
 
+    public void inputVoice(final TextView voice_text) {
+        if(flag==0)
+            Toast.makeText(MainActivity.this, "음성인식을 종료합니다.", Toast.LENGTH_SHORT).show();
+        else{
+            try {
+                intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+                intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, this.getPackageName());
+                intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");
 
+                stt = SpeechRecognizer.createSpeechRecognizer(this);
+                //Toast.makeText(MainActivity.this, "히히", Toast.LENGTH_SHORT).show();
+                if(flag==1)
+                    stt.startListening(intent);
 
+                stt.setRecognitionListener(new RecognitionListener() {
+                    @Override
+                    public void onReadyForSpeech(Bundle params) {
+                        System.out.println("onReadyForSpeech.........................");
 
+                    }
 
+                    @Override
+                    public void onBeginningOfSpeech() {
+                        if(flag==1){}
+                            //Toast.makeText(MainActivity.this, "지금부터 말을 해주세요", Toast.LENGTH_SHORT).show();
 
+                    }
 
+                    @Override
+                    public void onRmsChanged(float rmsdB) {
+                        System.out.println("onRmsChanged.........................");
 
-/*
-    //소켓 연결
-    void connet(){
-        mHandler = new Handler();
-        Log.w("connect","연결 하는중");
-        // 받아오는거
-        Thread checkUpdate = new Thread() {
-            public void run() {
-                try{
-                    socket = new Socket(ip,port);
-                    output=new DataOutputStream(socket.getOutputStream());
-                }catch (IOException e1) {
-                    Log.w("서버접속못함", "서버접속못함");
-                    e1.printStackTrace();
-                }
-                try{
-                    output=new DataOutputStream(socket.getOutputStream());
-                    output.writeBytes("s");
+                    }
 
-                }
-                catch (IOException e){
-                    e.printStackTrace();
-                    Log.w("버퍼","버퍼생성잘못됨");
-                }
+                    @Override
+                    public void onBufferReceived(byte[] buffer) {
+                        System.out.println("onBufferReceived.........................");
+                    }
+
+                    @Override
+                    public void onEndOfSpeech() {
+                        System.out.println("onEndOfSpeech.........................");
+                    }
+
+                    @Override
+                    public void onError(int error) {
+                        if(flag==1) {
+                            if (error == 8)
+                                Toast.makeText(MainActivity.this, "잠시 기다려주세요", Toast.LENGTH_SHORT).show();
+                            else if (error == 7) {
+                                //stt.destroy();
+                                //Toast.makeText(MainActivity.this, "천천히 다시 말해주세요.", Toast.LENGTH_SHORT).show();
+                                new Handler().postDelayed(new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        stt.startListening(intent);//딜레이 후 시작할 코드 작성
+                                    }
+                                }, 600);// 2초 정도 딜레이를 준 후 시작
+                            }
+                        }
+                    }
+
+                    @Override
+                    public void onResults(Bundle results) {
+                        //stt.destroy();
+                        String key = "";
+                        key = SpeechRecognizer.RESULTS_RECOGNITION;
+                        ArrayList<String> mResult = results.getStringArrayList(key);
+                        String[] rs = new String[mResult.size()];
+                        mResult.toArray(rs);
+                        Toast.makeText(MainActivity.this, rs[0], Toast.LENGTH_SHORT).show();
+                        replyAnswer(rs[0], voice_text);
+                        if (rs[0].equals("그만")) {
+                            flag=0;
+                        } else
+                            if(flag==1)
+                                new Handler().postDelayed(new Runnable()
+                                {
+                                    @Override
+                                    public void run()
+                                    {
+                                        stt.startListening(intent);//딜레이 후 시작할 코드 작성
+                                    }
+                                }, 600);// 2초 정도 딜레이를 준 후 시작
+
+                    }
+
+                    @Override
+                    public void onPartialResults(Bundle partialResults) {
+                        System.out.println("onPartialResults.........................");
+                    }
+
+                    @Override
+                    public void onEvent(int eventType, Bundle params) {
+                        System.out.println("onEvent.........................");
+                    }
+                });
+                //stt.startListening(intent);
+            } catch (Exception e) {
+                Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
             }
-        };
-        checkUpdate.start();
-    }
-
-
-    @Override
-    protected void onStop()
-    {
-        super.onStop();
-        try {
-            socket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        final TextView speedView = findViewById(R.id.speedView);
-
-        SharedPreferences sp = getSharedPreferences("SPEED", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sp.edit();
-        String tmp = speedView.getText().toString();
-        editor.putInt("speed", Integer.parseInt(tmp));
-
-        editor.commit();
     }
-*/
 
+    //인식된 음성에 따른 출력 결과 처리부
+    public void replyAnswer(String input, TextView voice_text) {
+        try {
+            if(input.equals("앞으로가")) {
+                MyClientTask myclientTask_down_W = new MyClientTask(ip,port, 'W');
+                myclientTask_down_W.execute();
+            }
+
+            else if(input.equals("뒤로가")) {
+                MyClientTask myclientTask_down_X = new MyClientTask(ip,port, 'X');
+                myclientTask_down_X.execute();
+            }
+
+            else if(input.contains("왼쪽 차선") && input.contains("이동")) {
+                voice_text.append(">> 왼쪽 차선으로 이동합니다.");
+            }
+
+            else if(input.contains("오른쪽 차선") && input.contains("이동")) {
+                voice_text.append(">> 오른쪽 차선으로 이동합니다.");
+            }
+
+            else if(input.contains("왼쪽") && input.contains("전진")) {
+                MyClientTask myclientTask_down_Q = new MyClientTask(ip, port, 'Q');
+                myclientTask_down_Q.execute();
+            }
+
+            else if(input.contains("오른쪽") && input.contains("전진")) {
+                MyClientTask myclientTask_down_E = new MyClientTask(ip, port, 'E');
+                myclientTask_down_E.execute();
+            }
+
+            else if(input.contains("왼쪽") && input.contains("후진")) {
+                MyClientTask myclientTask_down_Z = new MyClientTask(ip, port, 'Z');
+                myclientTask_down_Z.execute();
+            }
+
+            else if(input.contains("오른쪽") && input.contains("후진")) {
+                MyClientTask myclientTask_down_C = new MyClientTask(ip, port, 'C');
+                myclientTask_down_C.execute();
+            }
+
+            else if(input.equals("속도 올려") || input.equals("속도 높여")) {
+                MyClientTask myclientTask_down_U = new MyClientTask(ip,port, 'U');
+                myclientTask_down_U.execute();
+                final TextView speedView = findViewById(R.id.speedView);
+                tmp = speedView.getText().toString();
+                speed = Integer.parseInt(tmp);
+                if(speed >= 170) speed = 170;
+                else             speed += 5;
+                speedView.setText(speed.toString());
+            }
+
+            else if(input.equals("속도 내려") || input.equals("속도 낮춰")) {
+                MyClientTask myclientTask_down_J = new MyClientTask(ip,port, 'J');
+                myclientTask_down_J.execute();
+                final TextView speedView = findViewById(R.id.speedView);
+                tmp = speedView.getText().toString();
+                speed = Integer.parseInt(tmp);
+                if(speed <= 80) speed = 80;
+                else             speed -= 5;
+                speedView.setText(speed.toString());
+            }
+
+            else if(input.equals("정지")) {
+                MyClientTask myclientTask_up_S = new MyClientTask(ip,port, 'S');
+                myclientTask_up_S.execute();
+            }
+
+            else if(input.equals("종료")) {
+                voice_text.append(">> 음성인식 기능이 종료단계에 들어갑니다....");
+                finish();
+            }
+
+            else {
+
+            }
+
+        } catch(Exception e) {
+            Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    //소켓연결 및 데이터 전송
     public class MyClientTask extends AsyncTask<Void, Void, Void>{
         String taskIp;
         int taskPort;
@@ -616,140 +763,8 @@ public class MainActivity extends AppCompatActivity {
     }
     */
     }
-    //음성인식 처리부
-    public void inputVoice(final TextView voice_text) {
-        try {
-            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-            intent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, this.getPackageName());
-            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, "ko-KR");
-            final SpeechRecognizer stt = SpeechRecognizer.createSpeechRecognizer(this);
-            stt.setRecognitionListener(new RecognitionListener() {
-                @Override
-                public void onReadyForSpeech(Bundle params) {
-                    Toast.makeText(MainActivity.this, "명령해주십시오", Toast.LENGTH_SHORT).show();
-                }
 
-                @Override
-                public void onBeginningOfSpeech() {
-
-                }
-
-                @Override
-                public void onRmsChanged(float rmsdB) {
-
-                }
-
-                @Override
-                public void onBufferReceived(byte[] buffer) {
-
-                }
-
-                @Override
-                public void onEndOfSpeech() {
-                    Toast.makeText(MainActivity.this, "명령 인식 완료", Toast.LENGTH_SHORT).show();
-                }
-
-                @Override
-                public void onError(int error) {
-                    Toast.makeText(MainActivity.this, "오류 발생 : " + error, Toast.LENGTH_SHORT).show();
-                }
-
-                @Override
-                public void onResults(Bundle results) {
-                    ArrayList<String> result = (ArrayList<String>) results.get(SpeechRecognizer.RESULTS_RECOGNITION);
-                    voice_text.setText("");
-                    voice_text.append("[명령] " + result.get(0) + "\n");
-                    replyAnswer(result.get(0), voice_text);
-                    stt.destroy();
-                }
-
-                @Override
-                public void onPartialResults(Bundle partialResults) {
-
-                }
-
-                @Override
-                public void onEvent(int eventType, Bundle params) {
-
-                }
-            });
-        } catch(Exception e) {
-            Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_LONG).show();
-        }
-    }
-
-    //인식된 음성에 따른 출력 결과 처리부
-    public void replyAnswer(String input, TextView voice_text) {
-        try {
-            if(input.equals("앞으로 가")) {
-                voice_text.append(">> 차량을 앞으로 움직입니다.");
-            }
-
-            else if(input.equals("뒤로 가")) {
-                voice_text.append(">> 차량을 뒤로 움직입니다.");
-            }
-
-            else if(input.contains("왼쪽 차선") && input.contains("이동")) {
-                voice_text.append(">> 왼쪽 차선으로 이동합니다.");
-            }
-
-            else if(input.contains("오른쪽 차선") && input.contains("이동")) {
-                voice_text.append(">> 오른쪽 차선으로 이동합니다.");
-            }
-
-            else if(input.contains("왼쪽") && input.contains("전진")) {
-                voice_text.append(">> 왼쪽으로 전진합니다.");
-            }
-
-            else if(input.contains("오른쪽") && input.contains("전진")) {
-                voice_text.append(">> 오른쪽 으로 전진합니다.");
-            }
-
-            else if(input.contains("왼쪽") && input.contains("후진")) {
-                voice_text.append(">> 왼쪽으로 후진합니다.");
-            }
-
-            else if(input.contains("오른쪽") && input.contains("후진")) {
-                voice_text.append(">> 오른쪽으로 후진합니다.");
-            }
-
-            else if(input.equals("속도 올려") || input.equals("속도 높여")) {
-                voice_text.append(">> 차량의 속도를 높입니다.");
-
-                final TextView speedView = findViewById(R.id.speedView);
-                if(speed >= 255) speed = 255;
-                else             speed += 5;
-                speedView.setText(speed.toString());
-            }
-
-            else if(input.equals("속도 내려") || input.equals("속도 낮춰")) {
-                voice_text.append(">> 차량의 속도를 내립니다.");
-
-                final TextView speedView = findViewById(R.id.speedView);
-                if(speed <= 0) speed = 0;
-                else             speed -= 5;
-                speedView.setText(speed.toString());
-            }
-
-            else if(input.equals("정지")) {
-                voice_text.append(">> 차량을 정지합니다.");
-            }
-
-            else if(input.equals("종료")) {
-                voice_text.append(">> 음성인식 기능이 종료단계에 들어갑니다....");
-                finish();
-            }
-
-            else {
-                voice_text.append("** 알 수 없는 명령입니다. **");
-            }
-
-        } catch(Exception e) {
-            Toast.makeText(MainActivity.this, e.toString(), Toast.LENGTH_SHORT).show();
-        }
-    }
-
-
+    //연속눌림버튼
     public class RepeatListener implements View.OnTouchListener {
         private Handler handler = new Handler();
 
@@ -806,5 +821,56 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
     }
+
+    //소켓연결 프로토타입
+    /*
+    //소켓 연결
+    void connet(){
+        mHandler = new Handler();
+        Log.w("connect","연결 하는중");
+        // 받아오는거
+        Thread checkUpdate = new Thread() {
+            public void run() {
+                try{
+                    socket = new Socket(ip,port);
+                    output=new DataOutputStream(socket.getOutputStream());
+                }catch (IOException e1) {
+                    Log.w("서버접속못함", "서버접속못함");
+                    e1.printStackTrace();
+                }
+                try{
+                    output=new DataOutputStream(socket.getOutputStream());
+                    output.writeBytes("s");
+
+                }
+                catch (IOException e){
+                    e.printStackTrace();
+                    Log.w("버퍼","버퍼생성잘못됨");
+                }
+            }
+        };
+        checkUpdate.start();
+    }
+
+
+    @Override
+    protected void onStop()
+    {
+        super.onStop();
+        try {
+            socket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        final TextView speedView = findViewById(R.id.speedView);
+
+        SharedPreferences sp = getSharedPreferences("SPEED", MODE_PRIVATE);
+        SharedPreferences.Editor editor = sp.edit();
+        String tmp = speedView.getText().toString();
+        editor.putInt("speed", Integer.parseInt(tmp));
+
+        editor.commit();
+    }
+*/
 }
 
