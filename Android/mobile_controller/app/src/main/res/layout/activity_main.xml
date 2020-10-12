@@ -36,6 +36,7 @@
                 android:text="Auto Drive Mode"
                 android:textSize="20dp"/>
 
+
         </LinearLayout>
 
         //위쪽 레이아웃 안의 하단
@@ -86,7 +87,15 @@
                 android:layout_height="wrap_content"
                 android:text="On"/>
 
+            <Button
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Exit"
+                android:id="@+id/exit_btn"
+                android:layout_gravity="right"
+                android:textSize="20dp"/>
         </LinearLayout>
+
 
     </LinearLayout>
 

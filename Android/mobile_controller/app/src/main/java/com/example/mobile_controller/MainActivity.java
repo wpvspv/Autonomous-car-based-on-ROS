@@ -58,8 +58,10 @@ public class MainActivity extends AppCompatActivity {
     private DataOutputStream output;
     private DataOutputStream front;
 
-    private String ip="172.30.1.32"; //우리집 ip번호
+    //private String ip="172.30.1.32"; //우리집 ip번호
     //private String ip="192.168.219.101"; //너희집 ip번호
+    //private String ip="172.16.106.155"; //학교 ip번호
+    private String ip;
     private int port=9999;           //prot번호
     private char massage;
 
@@ -74,11 +76,13 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Intent inIntent = getIntent();
+        ip=inIntent.getStringExtra("ip_num");
         if(ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.RECORD_AUDIO}, 5);
             Toast.makeText(MainActivity.this, "허용하지 않을 경우 음성인식기능에 제한이 발생할 수 있습니다.", Toast.LENGTH_LONG).show();
         }
-
+        final Button exit = findViewById(R.id.exit_btn);
         final ImageButton go = findViewById(R.id.go);
         final ImageButton back = findViewById(R.id.back);
         final ImageButton left = findViewById(R.id.left);
@@ -136,6 +140,12 @@ public class MainActivity extends AppCompatActivity {
         }));
 
   */
+        exit.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
         go.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
