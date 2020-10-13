@@ -20,6 +20,9 @@ import android.text.TextWatcher;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -96,6 +99,7 @@ public class MainActivity extends AppCompatActivity {
         final Switch autoDriveMode = findViewById(R.id.autoDriveMode);
         final Switch voiceControl = findViewById(R.id.voiceControl);
 
+        final WebView stream = findViewById(R.id.stream);
         //SharedPreference에서 속도 값을 가져와서 속도계에 출력
         //SharedPreferences sp = getSharedPreferences("SPEED", MODE_PRIVATE);
         //speed = sp.getInt("speed", 80);
@@ -146,6 +150,19 @@ public class MainActivity extends AppCompatActivity {
                 finish();
             }
         });
+
+        stream.setPadding(0,0,0,0);
+        stream.getSettings().setBuiltInZoomControls(true); //줌기능 추가
+        stream.getSettings().setSupportZoom(true);
+        stream.getSettings().setDisplayZoomControls(false);
+        stream.getSettings().setJavaScriptEnabled(true); //자바스크립트 기능 추가
+        stream.getSettings().setLoadWithOverviewMode(true); //콘텐츠가 웹뷰보다 클 경우 스크린 크기에 맞게 조절
+        stream.getSettings().setUseWideViewPort(true); //wide view port를 사용
+        //stream.getSettings().setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN); //사이즈 자동 맞추기
+
+        String stream_url="http://"+ip+":8080/javascript_simple.html";
+        stream.loadUrl(stream_url);
+
         go.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -441,7 +458,7 @@ public class MainActivity extends AppCompatActivity {
 
 
                     Toast.makeText(MainActivity.this, "음성인식을 시작합니다.", Toast.LENGTH_SHORT).show();
-
+/*
                     //음성인식 스위치 켜질 경우 -> 사용자가 한 말을 보여주는 커스텀다이얼로그 생성
                     dialogView = getLayoutInflater().inflate(R.layout.voice_dialog, null);//레이아웃을 담는 View객체 생성
                     builder = new AlertDialog.Builder(MainActivity.this);//alertDialog.builder객체 생성 -> 다이얼로그의 각종 setting가능
@@ -459,7 +476,7 @@ public class MainActivity extends AppCompatActivity {
                     });
                     AlertDialog alertDialog = builder.create();//AlertDialog객체 생성
                     alertDialog.show();
-
+*/
                     flag=1;
                     inputVoice(voice_text);
                 }
