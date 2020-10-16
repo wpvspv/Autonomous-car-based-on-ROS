@@ -720,8 +720,8 @@ public class MainActivity extends AppCompatActivity {
                 final TextView speedView = findViewById(R.id.speedView);
                 tmp = speedView.getText().toString();
                 speed = Integer.parseInt(tmp);
-                if(speed >= 170) speed = 170;
-                else             speed += 5;
+                if(speed >= 250) speed = 250;
+                else             speed += 10;
                 speedView.setText(speed.toString());
             }
 
@@ -731,8 +731,8 @@ public class MainActivity extends AppCompatActivity {
                 final TextView speedView = findViewById(R.id.speedView);
                 tmp = speedView.getText().toString();
                 speed = Integer.parseInt(tmp);
-                if(speed <= 80) speed = 80;
-                else             speed -= 5;
+                if(speed <= 50) speed = 50;
+                else             speed -= 10;
                 speedView.setText(speed.toString());
             }
 
