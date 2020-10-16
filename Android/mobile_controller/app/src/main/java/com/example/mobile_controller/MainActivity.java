@@ -27,9 +27,11 @@ import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.MediaController;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.VideoView;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -48,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
 
     View dialogView;
     String tmp;
-    Integer speed=80;
+    Integer speed=100;
     private char m;
 
     private static final String TAG = "MainActivity";
@@ -99,7 +101,8 @@ public class MainActivity extends AppCompatActivity {
         final Switch autoDriveMode = findViewById(R.id.autoDriveMode);
         final Switch voiceControl = findViewById(R.id.voiceControl);
 
-        final WebView stream = findViewById(R.id.stream);
+        //final WebView stream = findViewById(R.id.stream); //webview 사용할 시
+        final VideoView stream = findViewById(R.id.stream); //videoview 사용할 시
         //SharedPreference에서 속도 값을 가져와서 속도계에 출력
         //SharedPreferences sp = getSharedPreferences("SPEED", MODE_PRIVATE);
         //speed = sp.getInt("speed", 80);
@@ -147,10 +150,12 @@ public class MainActivity extends AppCompatActivity {
         exit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                MyClientTask myclientTask_down_I = new MyClientTask(ip,port, 'I');
+                myclientTask_down_I.execute();
                 finish();
             }
         });
-
+        /*//webview 사용할 시
         stream.setPadding(0,0,0,0);
         stream.getSettings().setBuiltInZoomControls(true); //줌기능 추가
         stream.getSettings().setSupportZoom(true);
@@ -162,6 +167,17 @@ public class MainActivity extends AppCompatActivity {
 
         String stream_url="http://"+ip+":8080/javascript_simple.html";
         stream.loadUrl(stream_url);
+        */
+
+        //MediaController controller = new MediaController(MainActivity.this);
+
+        String stream_url="http://"+ip+":8080/javascript_simple.html";
+        stream.setVideoPath(stream_url);
+        stream.setMediaController(new MediaController(this));
+        stream.requestFocus();
+        stream.start();
+
+
 
         go.setOnTouchListener(new View.OnTouchListener() {
             @Override
@@ -400,8 +416,8 @@ public class MainActivity extends AppCompatActivity {
                         myclientTask_down_U.execute();
                         tmp = speedView.getText().toString();
                         speed = Integer.parseInt(tmp);
-                        if(speed >= 170) speed = 170;
-                        else             speed += 5;
+                        if(speed >= 250) speed = 250;
+                        else             speed += 10;
                         speedView.setText(speed.toString());
                         break;
                 }
@@ -425,8 +441,8 @@ public class MainActivity extends AppCompatActivity {
                         myclientTask_down_J.execute();
                         tmp = speedView.getText().toString();
                         speed = Integer.parseInt(tmp);
-                        if(speed <= 80) speed = 80;
-                        else           speed -= 5;
+                        if(speed <= 50) speed = 50;
+                        else           speed -= 10;
                         speedView.setText(speed.toString());
                         break;
                 }
@@ -477,6 +493,8 @@ public class MainActivity extends AppCompatActivity {
                     AlertDialog alertDialog = builder.create();//AlertDialog객체 생성
                     alertDialog.show();
 */
+                    MyClientTask myclientTask_down_V = new MyClientTask(ip,port, 'V');
+                    myclientTask_down_V.execute();
                     flag=1;
                     inputVoice(voice_text);
                 }
@@ -496,6 +514,9 @@ public class MainActivity extends AppCompatActivity {
                     speedDown.setBackgroundResource(R.drawable.speed_down_button);
                     left.setBackgroundResource(R.drawable.left_button);
                     right.setBackgroundResource(R.drawable.right_button);
+
+                    MyClientTask myclientTask_down_B = new MyClientTask(ip,port, 'B');
+                    myclientTask_down_B.execute();
 
                     flag=0;
 
@@ -673,30 +694,22 @@ public class MainActivity extends AppCompatActivity {
                 myclientTask_down_X.execute();
             }
 
-            else if(input.contains("왼쪽 차선") && input.contains("이동")) {
-                voice_text.append(">> 왼쪽 차선으로 이동합니다.");
-            }
-
-            else if(input.contains("오른쪽 차선") && input.contains("이동")) {
-                voice_text.append(">> 오른쪽 차선으로 이동합니다.");
-            }
-
-            else if(input.contains("왼쪽") && input.contains("전진")) {
+            else if(input.contains("왼쪽") && input.contains("앞으로")) {
                 MyClientTask myclientTask_down_Q = new MyClientTask(ip, port, 'Q');
                 myclientTask_down_Q.execute();
             }
 
-            else if(input.contains("오른쪽") && input.contains("전진")) {
+            else if(input.contains("오른쪽") && input.contains("앞으로")) {
                 MyClientTask myclientTask_down_E = new MyClientTask(ip, port, 'E');
                 myclientTask_down_E.execute();
             }
 
-            else if(input.contains("왼쪽") && input.contains("후진")) {
+            else if(input.contains("왼쪽") && input.contains("뒤로")) {
                 MyClientTask myclientTask_down_Z = new MyClientTask(ip, port, 'Z');
                 myclientTask_down_Z.execute();
             }
 
-            else if(input.contains("오른쪽") && input.contains("후진")) {
+            else if(input.contains("오른쪽") && input.contains("뒤로")) {
                 MyClientTask myclientTask_down_C = new MyClientTask(ip, port, 'C');
                 myclientTask_down_C.execute();
             }
@@ -723,16 +736,16 @@ public class MainActivity extends AppCompatActivity {
                 speedView.setText(speed.toString());
             }
 
-            else if(input.equals("정지")) {
+            else if(input.equals("정지") || (input.equals("멈춰"))) {
                 MyClientTask myclientTask_up_S = new MyClientTask(ip,port, 'S');
                 myclientTask_up_S.execute();
             }
-
+/*
             else if(input.equals("종료")) {
                 voice_text.append(">> 음성인식 기능이 종료단계에 들어갑니다....");
                 finish();
             }
-
+*/
             else {
 
             }

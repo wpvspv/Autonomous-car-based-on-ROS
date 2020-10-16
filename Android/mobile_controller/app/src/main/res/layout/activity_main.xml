@@ -172,13 +172,20 @@
                 android:layout_height="0dp"
                 android:layout_weight="2">
                 //android:background="@drawable/camera_screen">
-
+                <!--
                 <WebView
                     android:layout_width="800dp"
                     android:layout_height="600dp"
                     android:id="@+id/stream">
-
                 </WebView>
+                -->
+
+                <VideoView
+                    android:layout_width="640dp"
+                    android:layout_height="480dp"
+                    android:id="@+id/stream">
+
+                </VideoView>
             </LinearLayout>
 
         </LinearLayout>
