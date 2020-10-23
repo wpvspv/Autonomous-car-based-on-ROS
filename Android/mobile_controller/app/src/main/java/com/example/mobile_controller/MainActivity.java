@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         final TextView speedView = findViewById(R.id.speedView);
         final TextView voice_text = findViewById(R.id.voice_text);
 
-        final Switch autoDriveMode = findViewById(R.id.autoDriveMode);
+        //final Switch autoDriveMode = findViewById(R.id.autoDriveMode);
         final Switch voiceControl = findViewById(R.id.voiceControl);
 
         //final WebView stream = findViewById(R.id.stream); //webview 사용할 시
@@ -188,9 +188,7 @@ public class MainActivity extends AppCompatActivity {
                 {
                     case MotionEvent.ACTION_DOWN:
                         Log.d(TAG,"다운");
-
                         go.setBackgroundResource(R.drawable.up_pushed);
-
                         MyClientTask myclientTask_down_W = new MyClientTask(ip,port, 'W');
                         myclientTask_down_W.execute();
                         m='W';
@@ -450,30 +448,6 @@ public class MainActivity extends AppCompatActivity {
                 return false;
             }
         });
-
-        //음성인식 스위치 리스너
-        voiceControl.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-
-                //음성인식 스위치가 켜졌을 때 -> 나머지 버튼 비활성화 및 이미지 변경
-                if(isChecked) {
-                    go.setEnabled(false);
-                    back.setEnabled(false);
-                    speedUp.setEnabled(false);
-                    speedDown.setEnabled(false);
-                    left.setEnabled(false);
-                    right.setEnabled(false);
-
-                    go.setBackgroundResource(R.drawable.up_locked);
-                    back.setBackgroundResource(R.drawable.down_locked);
-                    speedUp.setBackgroundResource(R.drawable.speed_up_locked);
-                    speedDown.setBackgroundResource(R.drawable.speed_down_locked);
-                    left.setBackgroundResource(R.drawable.left_locked);
-                    right.setBackgroundResource(R.drawable.right_locked);
-
-
-                    Toast.makeText(MainActivity.this, "음성인식을 시작합니다.", Toast.LENGTH_SHORT).show();
 /*
                     //음성인식 스위치 켜질 경우 -> 사용자가 한 말을 보여주는 커스텀다이얼로그 생성
                     dialogView = getLayoutInflater().inflate(R.layout.voice_dialog, null);//레이아웃을 담는 View객체 생성
@@ -493,6 +467,28 @@ public class MainActivity extends AppCompatActivity {
                     AlertDialog alertDialog = builder.create();//AlertDialog객체 생성
                     alertDialog.show();
 */
+
+        //음성인식 스위치 리스너
+        voiceControl.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                //음성인식 스위치가 켜졌을 때 -> 나머지 버튼 비활성화 및 이미지 변경
+                if(isChecked) {
+                    go.setEnabled(false);
+                    back.setEnabled(false);
+                    speedUp.setEnabled(false);
+                    speedDown.setEnabled(false);
+                    left.setEnabled(false);
+                    right.setEnabled(false);
+
+                    go.setBackgroundResource(R.drawable.up_locked);
+                    back.setBackgroundResource(R.drawable.down_locked);
+                    speedUp.setBackgroundResource(R.drawable.speed_up_locked);
+                    speedDown.setBackgroundResource(R.drawable.speed_down_locked);
+                    left.setBackgroundResource(R.drawable.left_locked);
+                    right.setBackgroundResource(R.drawable.right_locked);
+
+                    Toast.makeText(MainActivity.this, "음성인식을 시작합니다.", Toast.LENGTH_SHORT).show();
                     MyClientTask myclientTask_down_V = new MyClientTask(ip,port, 'V');
                     myclientTask_down_V.execute();
                     flag=1;
@@ -517,16 +513,14 @@ public class MainActivity extends AppCompatActivity {
 
                     MyClientTask myclientTask_down_B = new MyClientTask(ip,port, 'B');
                     myclientTask_down_B.execute();
-
                     flag=0;
-
                     inputVoice(voice_text);
 
                 }
             }
         });
 
-
+        /*
         //자율주행 스위치 리스너
         autoDriveMode.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
@@ -571,10 +565,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        */
     }
 
     //음성인식 처리부
-
     public void inputVoice(final TextView voice_text) {
         if(flag==0)
             Toast.makeText(MainActivity.this, "음성인식을 종료합니다.", Toast.LENGTH_SHORT).show();
@@ -595,30 +589,25 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println("onReadyForSpeech.........................");
 
                     }
-
                     @Override
                     public void onBeginningOfSpeech() {
                         if(flag==1){}
                             //Toast.makeText(MainActivity.this, "지금부터 말을 해주세요", Toast.LENGTH_SHORT).show();
 
                     }
-
                     @Override
                     public void onRmsChanged(float rmsdB) {
                         System.out.println("onRmsChanged.........................");
 
                     }
-
                     @Override
                     public void onBufferReceived(byte[] buffer) {
                         System.out.println("onBufferReceived.........................");
                     }
-
                     @Override
                     public void onEndOfSpeech() {
                         System.out.println("onEndOfSpeech.........................");
                     }
-
                     @Override
                     public void onError(int error) {
                         if(flag==1) {
@@ -638,7 +627,6 @@ public class MainActivity extends AppCompatActivity {
                             }
                         }
                     }
-
                     @Override
                     public void onResults(Bundle results) {
                         //stt.destroy();
@@ -649,26 +637,21 @@ public class MainActivity extends AppCompatActivity {
                         mResult.toArray(rs);
                         Toast.makeText(MainActivity.this, rs[0], Toast.LENGTH_SHORT).show();
                         replyAnswer(rs[0], voice_text);
-                        if (rs[0].equals("그만")) {
-                            flag=0;
-                        } else
-                            if(flag==1)
-                                new Handler().postDelayed(new Runnable()
+                        if(flag==1)
+                            new Handler().postDelayed(new Runnable()
+                            {
+                                @Override
+                                public void run()
                                 {
-                                    @Override
-                                    public void run()
-                                    {
-                                        stt.startListening(intent);//딜레이 후 시작할 코드 작성
-                                    }
-                                }, 600);// 2초 정도 딜레이를 준 후 시작
+                                    stt.startListening(intent);//딜레이 후 시작할 코드 작성
+                                }
+                            }, 600);// 2초 정도 딜레이를 준 후 시작
 
                     }
-
                     @Override
                     public void onPartialResults(Bundle partialResults) {
                         System.out.println("onPartialResults.........................");
                     }
-
                     @Override
                     public void onEvent(int eventType, Bundle params) {
                         System.out.println("onEvent.........................");
